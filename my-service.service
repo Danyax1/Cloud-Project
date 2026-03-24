@@ -1,0 +1,13 @@
+[Unit]
+Description=My CI/CD Service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/my-ci-cd-service
+ExecStart=/usr/bin/python3 /home/ubuntu/my-ci-cd-service/app/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
