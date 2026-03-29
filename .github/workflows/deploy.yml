@@ -1,0 +1,39 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          if [ ! -d "Cloud-Project" ]; then
+            git clone https://github.com/Danyax1/Cloud-Project.git
+          fi
+          
+          cd Cloud-Project
+          git pull origin main
+          
+          sudo apt-get update -y
+          sudo apt-get install -y python3 python3-pip
+          
+          pip3 install --user -r requirements.txt
+          
+          sudo cp my-service.service /etc/systemd/system/
+          sudo systemctl daemon-reload
+          sudo systemctl enable my-service
+          sudo systemctl restart my-service
+          
+          sudo systemctl status my-service --no-pager
