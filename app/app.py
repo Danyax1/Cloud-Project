@@ -5,11 +5,12 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-    return "Hello from CI/CD! Service is running!"
+    return 'Hello from Cloud-Project on AWS EC2!'
 
 @app.route('/health')
 def health():
-    return {"status": "healthy"}, 200
+    return 'OK', 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
