@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y python3 python3-pip
           
-          pip3 install --user -r requirements.txt
+          sudo pip3 install -r requirements.txt --break-system-packages
           
           sudo cp my-service.service /etc/systemd/system/
           sudo systemctl daemon-reload
