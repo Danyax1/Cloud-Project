@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crypto Price</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      text-align: center;
+    }
+    .coin { color: #888; font-size: 1.2rem; margin-bottom: 8px; }
+    .price {
+      color: #f7931a;
+      font-size: 4rem;
+      font-weight: bold;
+    }
+    .eth { color: #627eea; }
+    .sol { color: #9945ff; }
+    .updated { color: #444; font-size: 0.8rem; margin-top: 16px; }
+  </style>
+  <script>
+    async function fetchPrices() {
+      const res = await fetch('/api/prices');
+      const data = await res.json();
+      document.getElementById('btc').textContent = '$' + data.bitcoin.toLocaleString();
+      document.getElementById('eth').textContent = '$' + data.ethereum.toLocaleString();
+      document.getElementById('sol').textContent = '$' + data.solana.toFixed(2);
+      document.getElementById('updated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+    }
+    fetchPrices();
+    setInterval(fetchPrices, 30000);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="coin">Bitcoin (BTC)</div>
+    <div class="price" id="btc">Loading...</div>
+
+    <br>
+
+    <div class="coin">Ethereum (ETH)</div>
+    <div class="price eth" id="eth">Loading...</div>
+
+    <br>
+
+    <div class="coin">Solana (SOL)</div>
+    <div class="price sol" id="sol">Loading...</div>
+
+    <div class="updated" id="updated"></div>
+  </div>
+</body>
+</html>
