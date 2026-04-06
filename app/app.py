@@ -8,6 +8,9 @@ import threading
 import time
 import os
 
+import hvac
+
+
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 
@@ -20,6 +23,21 @@ INFLUX_TOKEN = os.environ.get('INFLUXDB_TOKEN')
 INFLUX_ORG = os.environ.get('INFLUXDB_ORG', 'myorg')
 INFLUX_BUCKET = os.environ.get('INFLUXDB_BUCKET', 'crypto')
 
+
+
+VAULT_ADDR = os.environ.get('VAULT_ADDR')
+VAULT_TOKEN = os.environ.get('VAULT_TOKEN')
+
+def get_coingecko_url():
+    try:
+        if VAULT_ADDR and VAULT_TOKEN:
+            client = hvac.Client(url=VAULT_ADDR, token=VAULT_TOKEN)
+            secret = client.secrets.kv.read_secret_version(path='crypto/config')
+            return secret['data']['data']['COINGECKO_API_URL']
+    except Exception as e:
+        print(f'Vault error: {e}')
+    return 'https://api.coingecko.com/api/v3/simple/price'
+
 def get_influx_client():
     if INFLUX_URL and INFLUX_TOKEN:
         return InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -28,7 +46,7 @@ def get_influx_client():
 def fetch_crypto_prices():
     while True:
         try:
-            url = 'https://api.coingecko.com/api/v3/simple/price'
+            url = get_coingecko_url()
             params = {'ids': 'bitcoin,ethereum,solana', 'vs_currencies': 'usd'}
             r = requests.get(url, params=params, timeout=10)
             data = r.json()
