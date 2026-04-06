@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=ubuntu
 WorkingDirectory=/home/ubuntu/Cloud-Project
-Environment="INFLUXDB_URL=https://influxdb-production-08e2.up.railway.app
+Environment="INFLUXDB_URL=https://influxdb-production-08e2.up.railway.app"
 Environment="INFLUXDB_TOKEN=mytoken123"
 Environment="INFLUXDB_ORG=myorg"
 Environment="INFLUXDB_BUCKET=crypto"
