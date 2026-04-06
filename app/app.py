@@ -1,32 +1,29 @@
-from flask import Flask
+from flask import Flask, render_template, jsonify
 from prometheus_flask_exporter import PrometheusMetrics
 from prometheus_client import Gauge
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
+import hvac
 import requests
 import threading
 import time
 import os
 
-import hvac
-
-
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 
-# Prometheus metrics
 crypto_price = Gauge('crypto_price_usd', 'Cryptocurrency price in USD', ['coin'])
 
-# InfluxDB config
 INFLUX_URL = os.environ.get('INFLUXDB_URL')
 INFLUX_TOKEN = os.environ.get('INFLUXDB_TOKEN')
 INFLUX_ORG = os.environ.get('INFLUXDB_ORG', 'myorg')
 INFLUX_BUCKET = os.environ.get('INFLUXDB_BUCKET', 'crypto')
 
-
-
 VAULT_ADDR = os.environ.get('VAULT_ADDR')
 VAULT_TOKEN = os.environ.get('VAULT_TOKEN')
+
+# Save latest prices
+latest_prices = {'bitcoin': 0, 'ethereum': 0, 'solana': 0}
 
 def get_coingecko_url():
     try:
@@ -37,11 +34,6 @@ def get_coingecko_url():
     except Exception as e:
         print(f'Vault error: {e}')
     return 'https://api.coingecko.com/api/v3/simple/price'
-
-def get_influx_client():
-    if INFLUX_URL and INFLUX_TOKEN:
-        return InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-    return None
 
 def fetch_crypto_prices():
     while True:
@@ -57,13 +49,15 @@ def fetch_crypto_prices():
                 'solana': data['solana']['usd']
             }
 
+            latest_prices.update(coins)
+
             # Prometheus
             for coin, price in coins.items():
                 crypto_price.labels(coin=coin).set(price)
 
-            # Influx
-            client = get_influx_client()
-            if client:
+            # InfluxDB
+            if INFLUX_URL and INFLUX_TOKEN:
+                client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
                 write_api = client.write_api(write_options=SYNCHRONOUS)
                 for coin, price in coins.items():
                     point = Point("crypto_price") \
@@ -80,8 +74,12 @@ t = threading.Thread(target=fetch_crypto_prices, daemon=True)
 t.start()
 
 @app.route('/')
-def hello():
-    return 'Hello from Cloud-Project on AWS EC2!'
+def index():
+    return render_template('crypto.html')
+
+@app.route('/api/prices')
+def api_prices():
+    return jsonify(latest_prices)
 
 @app.route('/health')
 def health():
