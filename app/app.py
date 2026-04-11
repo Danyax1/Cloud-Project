@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from prometheus_flask_exporter import PrometheusMetrics
 from prometheus_client import Gauge
 from influxdb_client import InfluxDBClient, Point
