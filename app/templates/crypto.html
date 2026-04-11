@@ -8,23 +8,123 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       font-family: Arial, sans-serif;
+      color: white;
     }
-    .container {
-      text-align: center;
+    .container { text-align: center; padding: 40px; }
+    h1 { color: #f7931a; margin-bottom: 40px; }
+    .prices { display: flex; gap: 40px; justify-content: center; margin-bottom: 40px; }
+    .coin-card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 24px 32px;
     }
-    .coin { color: #888; font-size: 1.2rem; margin-bottom: 8px; }
-    .price {
-      color: #f7931a;
-      font-size: 4rem;
-      font-weight: bold;
-    }
+    .coin-name { color: #888; font-size: 1rem; margin-bottom: 8px; }
+    .coin-price { font-size: 2.5rem; font-weight: bold; }
+    .btc { color: #f7931a; }
     .eth { color: #627eea; }
     .sol { color: #9945ff; }
-    .updated { color: #444; font-size: 0.8rem; margin-top: 16px; }
+
+    .stats-section {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 32px;
+      margin-top: 20px;
+    }
+    .stats-section h2 { color: #aaa; margin-bottom: 20px; }
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    select, input, button {
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 1rem;
+    }
+    button {
+      background: #f7931a;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover { background: #e0820f; }
+    .stats-grid {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #2a2a2a;
+      border-radius: 8px;
+      padding: 20px 28px;
+      min-width: 140px;
+    }
+    .stat-label { color: #888; font-size: 0.85rem; margin-bottom: 8px; }
+    .stat-value { font-size: 1.8rem; font-weight: bold; color: #f7931a; }
+    .updated { color: #444; font-size: 0.8rem; margin-top: 20px; }
   </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🪙 Crypto Live Prices</h1>
+
+    <div class="prices">
+      <div class="coin-card">
+        <div class="coin-name">Bitcoin (BTC)</div>
+        <div class="coin-price btc" id="btc">Loading...</div>
+      </div>
+      <div class="coin-card">
+        <div class="coin-name">Ethereum (ETH)</div>
+        <div class="coin-price eth" id="eth">Loading...</div>
+      </div>
+      <div class="coin-card">
+        <div class="coin-name">Solana (SOL)</div>
+        <div class="coin-price sol" id="sol">Loading...</div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <h2>📊 Price Statistics</h2>
+      <div class="controls">
+        <select id="coin-select">
+          <option value="bitcoin">Bitcoin (BTC)</option>
+          <option value="ethereum">Ethereum (ETH)</option>
+          <option value="solana">Solana (SOL)</option>
+        </select>
+        <input type="number" id="hours-input" value="1" min="1" max="168" style="width:80px">
+        <span style="color:#888">hours</span>
+        <button onclick="fetchStats()">Show Stats</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Average</div>
+          <div class="stat-value" id="stat-avg">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value" id="stat-min" style="color:#e05555">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value" id="stat-max" style="color:#55e055">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="updated" id="updated"></div>
+  </div>
+
   <script>
     async function fetchPrices() {
       const res = await fetch('/api/prices');
@@ -34,26 +134,23 @@
       document.getElementById('sol').textContent = '$' + data.solana.toFixed(2);
       document.getElementById('updated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
     }
+
+    async function fetchStats() {
+      const coin = document.getElementById('coin-select').value;
+      const hours = document.getElementById('hours-input').value;
+      const res = await fetch(`/api/stats?coin=${coin}&hours=${hours}`);
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      document.getElementById('stat-avg').textContent = '$' + data.avg.toLocaleString();
+      document.getElementById('stat-min').textContent = '$' + data.min.toLocaleString();
+      document.getElementById('stat-max').textContent = '$' + data.max.toLocaleString();
+    }
+
     fetchPrices();
     setInterval(fetchPrices, 30000);
   </script>
-</head>
-<body>
-  <div class="container">
-    <div class="coin">Bitcoin (BTC)</div>
-    <div class="price" id="btc">Loading...</div>
-
-    <br>
-
-    <div class="coin">Ethereum (ETH)</div>
-    <div class="price eth" id="eth">Loading...</div>
-
-    <br>
-
-    <div class="coin">Solana (SOL)</div>
-    <div class="price sol" id="sol">Loading...</div>
-
-    <div class="updated" id="updated"></div>
-  </div>
 </body>
 </html>
