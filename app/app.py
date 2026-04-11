@@ -85,6 +85,43 @@ def api_prices():
 def health():
     return 'OK', 200
 
+@app.route('/api/stats')
+def api_stats():
+    coin = request.args.get('coin', 'bitcoin')
+    hours = int(request.args.get('hours', 1))
+
+    try:
+        if not INFLUX_URL or not INFLUX_TOKEN:
+            return jsonify({'error': 'InfluxDB not configured'})
+
+        client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+        query_api = client.query_api()
+
+        query = f'''
+        from(bucket: "{INFLUX_BUCKET}")
+          |> range(start: -{hours}h)
+          |> filter(fn: (r) => r._measurement == "crypto_price")
+          |> filter(fn: (r) => r._field == "price_usd")
+          |> filter(fn: (r) => r.coin == "{coin}")
+        '''
+
+        tables = query_api.query(query)
+        prices = [record.get_value() for table in tables for record in table.records]
+        client.close()
+
+        if not prices:
+            return jsonify({'error': 'No data for this period. Wait a few minutes for data to accumulate.'})
+
+        return jsonify({
+            'coin': coin,
+            'hours': hours,
+            'avg': round(sum(prices) / len(prices), 2),
+            'min': round(min(prices), 2),
+            'max': round(max(prices), 2)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
